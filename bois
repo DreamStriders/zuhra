@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MetaMask Authentication</title>
+    <script src="https://cdn.jsdelivr.net/npm/ethers@5.0.0/dist/ethers.umd.min.js"></script>
+</head>
+<body>
+    <h1>MetaMask Authentication</h1>
+    <button id="connectButton">Connect MetaMask</button>
+    <div id="status"></div>
+
+    <script>
+        // Check if MetaMask is available
+        if (typeof window.ethereum !== 'undefined') {
+            console.log('MetaMask is installed!');
+        } else {
+            alert('Please install MetaMask!');
+        }
+
+        const connectButton = document.getElementById("connectButton");
+        const statusDiv = document.getElementById("status");
+
+        // Event listener for the connect button
+        connectButton.addEventListener('click', async () => {
+            try {
+                // Request MetaMask connection
+                const provider = new ethers.BrowserProvider(window.ethereum);
+                const accounts = await provider.send("eth_requestAccounts", []);
+
+                if (accounts.length > 0) {
+                    const userAddress = accounts[0];
+                    statusDiv.innerText = `Connected: ${userAddress}`;
+
+                    // Sign a message to authenticate the user
+                    const message = `Please sign this message to authenticate yourself.`;
+                    const signature = await provider.getSigner().signMessage(message);
+
+                    console.log('Message signed:', signature);
+
+                    // Send this signature to your server for verification (optional)
+                    // Example: verifySignature(userAddress, message, signature);
+
+                    // You could also verify the signature locally if needed
+                    const signerAddress = ethers.verifyMessage(message, signature);
+                    console.log('Signer address:', signerAddress);
+
+                    if (signerAddress.toLowerCase() === userAddress.toLowerCase()) {
+                        console.log('User authenticated!');
+                        statusDiv.innerText = `User authenticated: ${userAddress}`;
+                    } else {
+                        console.error('Signature verification failed!');
+                    }
+                } else {
+                    statusDiv.innerText = 'No accounts found!';
+                }
+            } catch (error) {
+                console.error('Error connecting to MetaMask:', error);
+                statusDiv.innerText = `Error: ${error.message}`;
+            }
+        });
+    </script>
+</body>
+</html>
